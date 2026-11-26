@@ -105,7 +105,7 @@ jobs:
           name: ZUNO APK 0.2.${{ github.run_number }}
           body: |
             Automatically published signed ZUNO APK.
-            Android versionCode: ${{ 1000 + github.run_number }}
+            Android versionCode is automatically increased for each build.
             Install over an existing app only when signed with the same release keystore.
           files: android/app/build/outputs/apk/release/*.apk
           draft: false
