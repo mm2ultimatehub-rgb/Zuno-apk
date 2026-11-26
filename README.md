@@ -28,3 +28,27 @@ PWA önbelleği arayüzün temel dosyalarını saklar; ilk ziyaret ve yeni sür�
 
 ## Güvenlik
 API anahtarını veya keystore parolasını frontend / GitHub Pages dosyalarına yazma. Bunlar yalnızca güvenli backend secrets olarak tutulmalıdır.
+
+
+## Gerçek Android APK derlemesi (GitHub Actions)
+
+Bu repoya Capacitor Android kabuğu ve `.github/workflows/build-android.yml` eklendi. GitHub Actions, web arayüzünü Android uygulamasına paketler ve **imzalı Release APK** üretir.
+
+### İlk kurulum — imzalama secrets
+
+Repo → **Settings → Secrets and variables → Actions → New repository secret** bölümünde şu dört secret'ı oluştur:
+
+- `ZUNO_KEYSTORE_BASE64` — release `.jks` / `.keystore` dosyasının Base64 içeriği
+- `ZUNO_KEYSTORE_PASSWORD` — keystore parolası
+- `ZUNO_KEY_ALIAS` — anahtar alias'ı
+- `ZUNO_KEY_PASSWORD` — anahtar parolası
+
+Keystore'u veya parolaları kaynak koda commit etme. Base64 üretimi için yerel bilgisayarda `base64 -w 0 zuno-release.keystore` kullanılabilir; Android/Termux ortamlarında `base64 zuno-release.keystore` çıktısının tamamını kopyala.
+
+### Derlemeyi çalıştırma ve APK'yı alma
+
+1. Repo → **Actions** → **ZUNO Android Release APK**.
+2. **Run workflow** ile manuel başlat veya desteklenen kaynak dosyaları `main` branch'e gönder.
+3. Workflow başarılı olunca çalışmanın **Artifacts** bölümünden `ZUNO-APK-release` dosyasını indir.
+
+Workflow signing secret'ları eksikse güvenli şekilde hata verir; imzasız APK'yı release olarak sunmaz. Bu workflow APK'yı artifact olarak verir, otomatik GitHub Release oluşturmaz ve uygulama içi OTA güncelleme henüz sağlamaz.
