@@ -18,11 +18,13 @@
 - JSON proje yedeği oluşturma / geri yükleme
 - Version name, version code ve build profili ayarları
 - Yerel tarayıcı depolaması ve otomatik taslak kaydı
+- PWA olarak ana ekrana yükleme (uyumlu tarayıcılarda)
+- Uygulama kabuğu için service worker ve temel çevrimdışı açılış önbelleği
 
 ## Önemli sınırlar
 Bu bir **tarayıcı tabanlı proje çalışma alanıdır**, Android Studio'nun tam karşılığı değildir. GitHub Pages üzerinde Android SDK veya Gradle çalıştırılmaz. Şu an gerçek APK build, APK imzalama, release yayınlama ve uygulama içi güncelleme backend'i yoktur. Build ayar ekranı bu bağlantıya hazırlık içindir; sahte APK indirme göstermez.
 
-ZIP işlemleri için JSZip CDN kullanılır; ZIP açma/dışa aktarma sırasında internet bağlantısı gerekir. Projeler varsayılan olarak cihazın tarayıcısında saklanır. Tarayıcı verilerini silmeden önce **JSON yedeği** indir.
+PWA önbelleği arayüzün temel dosyalarını saklar; ilk ziyaret ve yeni sürüm yüklemesi için internet gerekir. ZIP işlemleri için JSZip CDN kullanılır; ZIP açma/dışa aktarma sırasında internet bağlantısı gerekir. Projeler varsayılan olarak cihazın tarayıcısında saklanır. Tarayıcı verilerini silmeden önce **JSON yedeği** indir.
 
 ## Güvenlik
 API anahtarını veya keystore parolasını frontend / GitHub Pages dosyalarına yazma. Bunlar yalnızca güvenli backend secrets olarak tutulmalıdır.
