@@ -41,6 +41,8 @@ jobs:
         run: npm install
       - name: Prepare web app
         run: npm run prepare:web
+      - name: Stamp native app version for update checker
+        run: sed -i 's/content="0.2.0"/content="0.2.${GITHUB_RUN_NUMBER}"/' www/index.html
       - name: Generate native Android project
         run: npx cap add android
       - name: Sync native project
