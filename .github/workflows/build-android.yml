@@ -16,7 +16,7 @@ on:
       - ".github/workflows/build-android.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   release-apk:
@@ -57,6 +57,16 @@ jobs:
           test -n "$ZUNO_KEY_ALIAS" || (echo "::error::Missing ZUNO_KEY_ALIAS GitHub Secret"; exit 1)
           test -n "$ZUNO_KEY_PASSWORD" || (echo "::error::Missing ZUNO_KEY_PASSWORD GitHub Secret"; exit 1)
           echo "$ZUNO_KEYSTORE_BASE64" | base64 --decode > android/app/zuno-release.keystore
+          VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))
+          VERSION_NAME="0.2.${GITHUB_RUN_NUMBER}"
+          cat >> android/app/build.gradle <<GRADLE
+          android {
+              defaultConfig {
+                  versionCode ${VERSION_CODE}
+                  versionName "${VERSION_NAME}"
+              }
+          }
+          GRADLE
           cat >> android/app/build.gradle <<'GRADLE'
           android {
               signingConfigs {
@@ -87,3 +97,17 @@ jobs:
           path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publish APK as a GitHub Release for in-app updates
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: zuno-apk-0.2.${{ github.run_number }}
+          name: ZUNO APK 0.2.${{ github.run_number }}
+          body: |
+            Automatically published signed ZUNO APK.
+            Android versionCode: ${{ 1000 + github.run_number }}
+            Install over an existing app only when signed with the same release keystore.
+          files: android/app/build/outputs/apk/release/*.apk
+          draft: false
+          prerelease: false
+          generate_release_notes: true
