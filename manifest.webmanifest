@@ -1,6 +1,6 @@
 {
   "id": "./",
-  "name": "ZUNO APK — Mobile Android Studio",
+  "name": "ZUNO APK — Android proje çalışma alanı",
   "short_name": "ZUNO APK",
   "description": "Telefon üzerinden Android proje dosyalarını düzenle, önizle ve yedekle.",
   "lang": "tr",
@@ -8,8 +8,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0e1110",
-  "theme_color": "#0e1110",
+  "background_color": "#0b1214",
+  "theme_color": "#0b1214",
   "icons": [
     {"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
   ]
