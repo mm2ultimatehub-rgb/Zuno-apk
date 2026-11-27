@@ -50,10 +50,10 @@ jobs:
           const path = 'www/index.html';
           let html = await readFile(path, 'utf8');
           const version = process.env.VERSION_NAME;
-          if (!version || !/^\\d+\\.\\d+\\.\\d+$/.test(version)) {
+          if (!version || !/^\d+\.\d+\.\d+$/.test(version)) {
             throw new Error('Invalid VERSION_NAME: ' + version);
           }
-          const pattern = /(<meta\\s+name="zuno-app-version"\\s+content=")[^"]*(")/i;
+          const pattern = /(<meta\s+name="zuno-app-version"\s+content=")[^"]*(")/i;
           if (!pattern.test(html)) throw new Error('zuno-app-version meta tag missing');
           html = html.replace(pattern, (_match, prefix, suffix) => prefix + version + suffix);
           await writeFile(path, html);
