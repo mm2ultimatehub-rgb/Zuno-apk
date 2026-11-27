@@ -174,7 +174,47 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.se
 // GitHub Release-based APK updater. Publish a signed APK in a GitHub Release for this checker to find it.
 const ZUNO_RELEASE_API='https://api.github.com/repos/mm2ultimatehub-rgb/Zuno-apk/releases/latest';
 let zunoLatestRelease=null;
-async function checkZunoUpdate(){const badge=document.getElementById('updateBadge'),title=document.getElementById('updateTitle'),message=document.getElementById('updateMessage'),loader=document.getElementById('waveLoader'),button=document.getElementById('checkUpdateBtn'),download=document.getElementById('downloadUpdateBtn'),details=document.getElementById('updateDetails');loader.classList.add('active');button.disabled=true;button.textContent='Denetleniyor…';badge.textContent='Kontrol ediliyor';download.classList.add('hidden');details.textContent='';try{const response=await fetch(ZUNO_RELEASE_API,{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});if(response.status===404){badge.textContent='Yayın bulunamadı';title.textContent='Henüz APK sürümü yayınlanmamış';message.textContent='GitHub Releases bölümüne imzalı bir APK yüklenince burada sürüm ve indirme bağlantısı görünür.';return}if(!response.ok)throw new Error('GitHub yanıtı: HTTP '+response.status);const release=await response.json();zunoLatestRelease=release;const apk=(release.assets||[]).find(a=>/\.apk$/i.test(a.name));const current=(document.querySelector('meta[name="zuno-app-version"]')?.content||'0.2.0').split('.').map(Number),match=(release.tag_name||'').match(/(\d+\.\d+\.\d+)/),latest=match?match[1].split('.').map(Number):null;const newer=latest&&latest.some((v,i)=>v>(current[i]||0)&&latest.slice(0,i).every((x,j)=>x===(current[j]||0)));title.textContent=release.name||release.tag_name||'ZUNO sürümü';message.textContent=release.body||'Release notu yok.';if(newer){badge.textContent=apk?'Güncelleme var':'Yeni sürüm';}else{badge.textContent='ZUNO güncel';title.textContent='En son sürüm zaten yüklü';message.textContent='Yüklü sürüm: '+current.join('.')+' · Son yayın: '+(latest?latest.join('.'):release.tag_name);download.classList.add('hidden')}if(apk&&newer){download.href=apk.browser_download_url;download.download=apk.name;download.classList.remove('hidden');details.textContent='Dosya: '+apk.name+' · '+(apk.size?((apk.size/1024/1024).toFixed(1)+' MB'):'Boyut belirtilmemiş')+' · '+(release.published_at?new Date(release.published_at).toLocaleDateString():'');}else if(!apk){details.textContent='Bu Release içinde .apk dosyası bulunamadı.'}}catch(error){badge.textContent='Kontrol başarısız';title.textContent='Sürüm kontrol edilemedi';message.textContent='İnternet bağlantısını kontrol edip tekrar dene.';details.textContent=String(error.message||error)}finally{loader.classList.remove('active');button.disabled=false;button.textContent='Yeniden denetle'}}
+async function checkZunoUpdate(){
+ const badge=document.getElementById('updateBadge'),title=document.getElementById('updateTitle'),message=document.getElementById('updateMessage'),loader=document.getElementById('waveLoader'),button=document.getElementById('checkUpdateBtn'),download=document.getElementById('downloadUpdateBtn'),details=document.getElementById('updateDetails');
+ loader.classList.add('active');button.disabled=true;button.textContent='Denetleniyor…';badge.textContent='Kontrol ediliyor';download.classList.add('hidden');details.textContent='';
+ try{
+  const response=await fetch(ZUNO_RELEASE_API,{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
+  if(response.status===404){badge.textContent='Yayın bulunamadı';title.textContent='Henüz APK sürümü yayınlanmamış';message.textContent='GitHub Releases bölümüne imzalı APK yayınlandığında burada görünür.';return}
+  if(!response.ok)throw new Error('GitHub yanıtı: HTTP '+response.status);
+  const release=await response.json();zunoLatestRelease=release;
+  const apk=(release.assets||[]).find(a=>/\.apk$/i.test(a.name));
+  const meta=document.querySelector('meta[name="zuno-app-version"]')?.content?.trim()||'';
+  const versionPattern=/^(\d+)\.(\d+)\.(\d+)$/;
+  const currentMatch=meta.match(versionPattern);
+  const tagMatch=(release.tag_name||'').match(/(\d+\.\d+\.\d+)/);
+  const current=currentMatch?currentMatch.slice(1).map(Number):null;
+  const latest=tagMatch?tagMatch[1].split('.').map(Number):null;
+  const compare=(a,b)=>{for(let i=0;i<3;i++){if(a[i]!==b[i])return a[i]-b[i]}return 0};
+  const isPages=location.hostname.endsWith('.github.io');
+  const canCompare=!!(current&&latest);
+  const newer=canCompare?compare(latest,current)>0:false;
+  const offer=!!apk&&(isPages||!canCompare||newer);
+  title.textContent=release.name||release.tag_name||'ZUNO sürümü';
+  if(isPages){
+   badge.textContent='APK yayında';title.textContent='Son ZUNO APK sürümü';
+   message.textContent='Bu sayfa web sürümüdür; cihazına kurulu APK sürümünü buradan doğrulayamam. En son yayınlanan APK aşağıda.';
+  }else if(!canCompare){
+   badge.textContent='Sürüm doğrulanamadı';title.textContent='Sürüm bilgisi düzeltme güncellemesi';
+   message.textContent='Bu kurulumun sürüm etiketi okunamadı. Aynı sürümü tekrar göstermemek için sürüm bilgisi düzeltilmiş yeni APK’yı yükle.';
+  }else if(newer){
+   badge.textContent=apk?'Güncelleme var':'Yeni sürüm';
+   message.textContent='Kurulu sürüm: '+meta+' · Yeni sürüm: '+tagMatch[1];
+  }else{
+   badge.textContent='ZUNO güncel';title.textContent='En son sürüm zaten yüklü';
+   message.textContent='Kurulu sürüm: '+meta+' · Son yayın: '+tagMatch[1];
+  }
+  if(offer){
+   download.href=apk.browser_download_url;download.download=apk.name;download.classList.remove('hidden');
+   details.textContent='Dosya: '+apk.name+' · '+(apk.size?((apk.size/1024/1024).toFixed(2)+' MB'):'Boyut belirtilmemiş')+' · '+(release.published_at?new Date(release.published_at).toLocaleDateString():'');
+  }else if(!apk){details.textContent='Bu Release içinde .apk dosyası bulunamadı.'}
+ }catch(error){badge.textContent='Kontrol başarısız';title.textContent='Sürüm kontrol edilemedi';message.textContent='İnternet bağlantısını kontrol edip tekrar dene.';details.textContent=String(error.message||error)}
+ finally{loader.classList.remove('active');button.disabled=false;button.textContent='Yeniden denetle'}
+}
 document.getElementById('downloadUpdateBtn').addEventListener('click',()=>{const loader=document.getElementById('waveLoader'),progress=document.getElementById('updateProgress'),message=document.getElementById('updateMessage'),details=document.getElementById('updateDetails');loader.classList.add('active');progress.classList.remove('hidden');message.textContent='APK indirme bağlantısı açılıyor…';details.textContent='İndirme Android tarayıcısında / indirme yöneticisinde devam eder. İndikten sonra APK dosyasını açıp yükle.';});
 // Home-page APK download card: resolve the latest published APK asset.
 async function loadSiteApk(){const badge=document.getElementById('siteApkBadge'),info=document.getElementById('siteApkInfo'),link=document.getElementById('siteApkDownload');try{const res=await fetch(ZUNO_RELEASE_API,{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);const release=await res.json();const apk=(release.assets||[]).find(a=>/\\.apk$/i.test(a.name));if(apk){link.href=apk.browser_download_url;link.removeAttribute('target');link.textContent='APK indir · '+(release.tag_name||'son sürüm');badge.textContent='Yayında';info.textContent=(release.name||release.tag_name||'Son ZUNO sürümü')+' · '+(apk.size?(apk.size/1024/1024).toFixed(1)+' MB':'APK');}else{badge.textContent='APK bulunamadı';info.textContent='En son Release içinde APK dosyası henüz yok. Tüm sürümler sayfasından kontrol edebilirsin.';}}catch(e){badge.textContent='Bağlantı bekleniyor';info.textContent='APK indirme bağlantısı alınamadı. GitHub Releases sayfasından son APK’yı aç.';}}
