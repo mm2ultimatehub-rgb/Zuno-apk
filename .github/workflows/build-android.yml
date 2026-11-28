@@ -108,6 +108,32 @@ jobs:
           ZUNO_KEY_ALIAS: ${{ secrets.ZUNO_KEY_ALIAS }}
           ZUNO_KEY_PASSWORD: ${{ secrets.ZUNO_KEY_PASSWORD }}
         run: cd android && chmod +x gradlew && ./gradlew assembleRelease
+      - name: Verify APK signature and version metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          test -f "$APK" || { echo "::error::Release APK was not produced"; exit 1; }
+          test -x "$APKSIGNER" || { echo "::error::apksigner is unavailable"; exit 1; }
+          test -x "$AAPT" || { echo "::error::aapt is unavailable"; exit 1; }
+
+          # Fail the release before upload if APK is unsigned or its embedded
+          # application/version metadata does not match this workflow run.
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          PACKAGE_LINE="$(printf '%s\n' "$BADGING" | grep -m1 '^package:')"
+          PACKAGE_NAME="$(printf '%s\n' "$PACKAGE_LINE" | sed -E "s/.*name='([^']+)'.*/\\1/")"
+          APK_VERSION_CODE="$(printf '%s\n' "$PACKAGE_LINE" | sed -E "s/.*versionCode='([^']+)'.*/\\1/")"
+          APK_VERSION_NAME="$(printf '%s\n' "$PACKAGE_LINE" | sed -E "s/.*versionName='([^']+)'.*/\\1/")"
+          EXPECTED_CODE="$((1000 + GITHUB_RUN_NUMBER))"
+          EXPECTED_NAME="0.2.${GITHUB_RUN_NUMBER}"
+
+          test "$PACKAGE_NAME" = "com.mm2ultimatehub.zunoapk" || { echo "::error::Unexpected package id: $PACKAGE_NAME"; exit 1; }
+          test "$APK_VERSION_CODE" = "$EXPECTED_CODE" || { echo "::error::Expected versionCode $EXPECTED_CODE, got $APK_VERSION_CODE"; exit 1; }
+          test "$APK_VERSION_NAME" = "$EXPECTED_NAME" || { echo "::error::Expected versionName $EXPECTED_NAME, got $APK_VERSION_NAME"; exit 1; }
+          echo "Verified signed APK: $PACKAGE_NAME $APK_VERSION_NAME (versionCode $APK_VERSION_CODE)"
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
